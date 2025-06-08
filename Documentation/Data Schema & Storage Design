@@ -1,0 +1,37 @@
+# 🗂️ Syntraq Data Schema & Storage Design
+
+## 🎯 Purpose
+To define how Syntraq structures and stores critical information across modules including opportunities, proposals, users, agents, and system logs. The schema is designed for:
+- Modular use across all workflows
+- AI accessibility (semantic, relational)
+- Support for local and cloud storage
+
+---
+
+## 📁 Core Data Categories
+
+### 1. Opportunity Schema
+Stored in: `/opportunities/*.json`
+
+```json
+{
+  "opportunity_id": "SAM-GOV-2025-00123",
+  "title": "HR Training for Federal Agency",
+  "agency": "Department of Justice",
+  "naics": "611430",
+  "psc": "U009",
+  "type": "RFP",
+  "set_aside": "WOSB",
+  "location": "Washington, DC",
+  "value_estimate": 240000,
+  "deadline": "2025-07-10T23:59:00Z",
+  "source_url": "https://sam.gov/...",
+  "attachments": ["sow.pdf", "instructions.pdf"],
+  "status": "active",
+  "fit_score": 87,
+  "summary": "...",
+  "relevance_tags": ["training", "GSA", "on-site"],
+  "decision": "go", // or "no-go", "bookmark"
+  "created_at": "...",
+  "updated_at": "..."
+}

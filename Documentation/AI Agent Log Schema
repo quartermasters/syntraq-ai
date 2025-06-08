@@ -1,0 +1,14 @@
+{
+  "agent_id": "Writer AI",
+  "project_id": "PRO-DOJ-611430-HR2025",
+  "tasks": [
+    {
+      "section": "Management Plan",
+      "confidence_score": 91,
+      "iterations": 2,
+      "human_override": false,
+      "timestamp": "..."
+    }
+  ],
+  "overall_engagement_score": 85
+}

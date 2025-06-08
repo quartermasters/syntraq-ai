@@ -1,0 +1,39 @@
+/opportunities/
+    ├── SAM-GOV-2025-00123.json
+    └── attachments/
+        └── SOW.pdf
+
+/proposals/
+    └── PRO-DOJ-611430-HR2025/
+        ├── metadata.json
+        ├── volumes/
+        │   ├── technical.docx
+        │   ├── cost.xlsx
+        │   └── compliance.pdf
+        ├── attachments/
+        └── version_log.json
+
+/users/
+    └── user123.json
+
+/logs/
+    └── agents/
+        └── PRO-DOJ-611430-HR2025.json
+💾 Storage Technologies
+Layer	Default Dev Setup	Production Option
+Metadata	JSON / SQLite (local)	PostgreSQL or MongoDB
+Files	Local folder structure	AWS S3 / Google Drive
+AI Logs	Local JSON	Encrypted audit log
+Versioning	Timestamped snapshots	Git-style commit structure
+Google Sync	Optional drive integration	OAuth-secured access
+
+🔐 Security & Data Integrity
+SHA256 hashes on saved attachments
+
+Role-based access at object level
+
+Proposal version locking
+
+Agent logs are immutable
+
+JSON schema validation before writing

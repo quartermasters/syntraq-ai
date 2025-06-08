@@ -1,0 +1,14 @@
+{
+  "user_id": "user123",
+  "name": "Jasmine Lee",
+  "role": "Proposal Manager",
+  "permissions": ["view", "edit", "approve"],
+  "email": "jlee@company.com",
+  "assigned_tasks": [...],
+  "activity_log": [...],
+  "profile_settings": {
+    "preferred_agencies": ["DOD", "VA"],
+    "naics_focus": ["541611", "611430"],
+    "view_mode": "executive"
+  }
+}

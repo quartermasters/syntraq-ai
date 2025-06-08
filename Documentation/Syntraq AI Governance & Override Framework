@@ -1,0 +1,108 @@
+# 🛡️ Syntraq AI Governance & Override Framework
+
+## 🎯 Purpose
+To ensure Syntraq’s AI agents operate:
+- Within secure, ethical, and auditable boundaries
+- With human oversight and override options
+- In compliance with contracting standards (FAR/DFARS)
+- Aligned with the strategic intent and risk profile of the company using it
+
+---
+
+## ⚙️ Agent Classification
+
+| Agent Type         | Functionality Scope                                | Risk Level | Example              |
+|--------------------|-----------------------------------------------------|------------|----------------------|
+| Advisory AI        | Suggests but doesn’t act                            | Low        | Opportunity Summarizer, Reviewer AI |
+| Autonomous AI      | Acts on user-approved tasks                         | Medium     | Proposal Writer AI, Scheduler AI    |
+| Critical AI        | Involves pricing, compliance, or submission control | High       | Compliance AI, Pricing AI           |
+
+---
+
+## 🔐 Autonomy Levels (Per Module or Task)
+
+| Level         | Description                                                    | Default For           |
+|---------------|----------------------------------------------------------------|------------------------|
+| 🟢 Full Auto   | Agent acts without user approval, but logs all actions        | Low-risk writing tasks |
+| 🟡 Semi-Auto  | Agent drafts/suggests, user must approve to proceed            | Pricing, narratives    |
+| 🔴 Read-Only   | Agent only analyzes, never acts or changes data               | Compliance Checker     |
+
+All levels are **configurable per organization or opportunity**.
+
+---
+
+## 👤 Human-in-the-Loop Controls
+
+- **Mandatory Approval Points**:
+  - Before sending proposal
+  - Before exporting cost model
+  - Before auto-signing SF forms
+  - Before final Go confirmation
+
+- **Manual Override Buttons**:
+  - Replace AI draft with manual input
+  - Reassign task to another agent or human
+  - Pause or reset AI workflows
+
+---
+
+## 📝 AI Action Logging & Transparency
+
+| Logged Data              | Usage                                  |
+|--------------------------|----------------------------------------|
+| Agent name & type        | Traceability of action                 |
+| Timestamp of action      | Audit trail                            |
+| Section affected         | Impact mapping                         |
+| Confidence score         | Alerting when score < threshold        |
+| Overrides applied        | Human governance check                 |
+| Approval or rejection    | Decision trail                         |
+
+---
+
+## 📈 AI Confidence Scoring
+
+Each agent provides a confidence rating (0–100%) with:
+- Explanation of uncertainty
+- Suggested human review areas
+- Visual alerts when confidence < 70%
+
+---
+
+## 🧠 Prompt Governance
+
+- All agent prompts are stored and version-controlled
+- Organizations can upload **custom prompt libraries** by agency or domain
+- Admins can disable or replace default prompts
+
+---
+
+## 📤 Compliance Mode (GovCon Strict Mode)
+
+When enabled:
+- No proposal volume can be completed by AI without reviewer sign-off
+- All compliance checklists must be manually confirmed
+- Export is disabled until all SF forms and cost models are signed-off
+
+---
+
+## 🔒 Privacy & Security Safeguards
+
+- AI-generated data is sandboxed from PII unless approved
+- No OpenAI logs stored outside of user's encrypted local or self-hosted system
+- Admins can disable external API usage in favor of local LLMs
+
+---
+
+## 🛑 Risk Mitigation Fail-Safes
+
+- **Auto-Block**: Stops progression if:
+  - Key personnel not validated
+  - Required form is missing
+  - Proposal status not 100%
+
+- **Change Detection Watchdog**:
+  - Alerts if AI attempts to alter approved content or pricing
+
+- **Legal Lockdown Mode**:
+  - Disables AI editing on legal, compliance, or pricing sections
+
