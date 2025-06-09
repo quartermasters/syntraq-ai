@@ -489,7 +489,7 @@ syntraq-ai/
 <tr>
 <td align="center" width="33%">
 
-<img src="https://aliffcapital.com/wp-content/uploads/2025/05/Aliff-Group-logo.jpg" alt="Aliff Capital" width="150" height="60" style="object-fit: contain;">
+<img src="https://aliffcapital.com/wp-content/uploads/2025/05/Aliff-Group-logo.jpg" alt="Aliff Capital" width="200" height="80" style="object-fit: contain; margin: 20px 0;">
 
 **🏢 Aliff Capital**  
 *Strategic Investment & Business Development*  
@@ -498,7 +498,7 @@ syntraq-ai/
 </td>
 <td align="center" width="33%">
 
-<img src="https://quartermasters.me/wp-content/uploads/2024/12/cropped-Quartermasters-Logo-1-1.png" alt="Quartermasters FZC" width="150" height="60" style="object-fit: contain;">
+<img src="https://quartermasters.me/wp-content/uploads/2024/12/cropped-Quartermasters-Logo-1-1.png" alt="Quartermasters FZC" width="200" height="80" style="object-fit: contain; margin: 20px 0;">
 
 **⚙️ Quartermasters FZC**  
 *Lead Architecture & Full-Stack Development*  
@@ -507,7 +507,7 @@ syntraq-ai/
 </td>
 <td align="center" width="33%">
 
-<img src="https://skillvenza.com/wp-content/uploads/2025/05/cropped-skillvenza-icon-512x512-1-300x236.png" alt="SkillvenzA" width="150" height="60" style="object-fit: contain;">
+<img src="https://skillvenza.com/wp-content/uploads/2025/05/cropped-skillvenza-icon-512x512-1-300x236.png" alt="SkillvenzA" width="200" height="80" style="object-fit: contain; margin: 20px 0;">
 
 **🧠 SkillvenzA**  
 *AI Advisory & Continuous Innovation*  
@@ -521,7 +521,11 @@ syntraq-ai/
 
 ### **Ready to transform your GovCon success?**
 
-[🚀 **Start Free Trial**](https://app.syntraq.ai/signup) • [📖 **Read Full Docs**](./Documentation/) • [💬 **Join Community**](https://discord.gg/syntraq)
+<p align="center">
+  <a href="https://app.syntraq.ai/signup"><img src="https://img.shields.io/badge/🚀_Start_Free_Trial-4CAF50?style=for-the-badge&logoColor=white" alt="Start Free Trial"></a>
+  <a href="./Documentation/"><img src="https://img.shields.io/badge/📖_Read_Full_Docs-2196F3?style=for-the-badge&logoColor=white" alt="Read Docs"></a>
+  <a href="https://discord.gg/syntraq"><img src="https://img.shields.io/badge/💬_Join_Community-7289DA?style=for-the-badge&logoColor=white" alt="Join Community"></a>
+</p>
 
 **Built by GovCon professionals, for GovCon professionals**
 
@@ -530,9 +534,11 @@ syntraq-ai/
 *© 2025 Syntraq AI - A Joint Innovation by Aliff Capital, Quartermasters FZC, and SkillvenzA*  
 *All Rights Reserved. Transforming government contracting with artificial intelligence.*
 
-[![License](https://img.shields.io/badge/License-Proprietary-red.svg)](#) 
-[![Status](https://img.shields.io/badge/Status-MVP%20Active-green.svg)](#)
-[![AI](https://img.shields.io/badge/AI%20Powered-OpenAI%20GPT--4o-blue.svg)](#)
-[![Partners](https://img.shields.io/badge/Joint%20Innovation-3%20Partners-purple.svg)](#)
+<p align="center">
+  <img src="https://img.shields.io/badge/License-Proprietary-red.svg?style=for-the-badge" alt="License">
+  <img src="https://img.shields.io/badge/Status-MVP_Active-green.svg?style=for-the-badge" alt="Status">
+  <img src="https://img.shields.io/badge/AI_Powered-OpenAI_GPT--4o-blue.svg?style=for-the-badge" alt="AI Powered">
+  <img src="https://img.shields.io/badge/Joint_Innovation-3_Partners-purple.svg?style=for-the-badge" alt="Partners">
+</p>
 
 </div>
