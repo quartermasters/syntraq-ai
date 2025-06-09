@@ -489,6 +489,8 @@ syntraq-ai/
 <tr>
 <td align="center" width="33%">
 
+<img src="https://aliffcapital.com/wp-content/uploads/2025/05/Aliff-Group-logo.jpg" alt="Aliff Capital" width="150" height="60" style="object-fit: contain;">
+
 **🏢 Aliff Capital**  
 *Strategic Investment & Business Development*  
 [aliffcapital.com](https://www.aliffcapital.com)
@@ -496,12 +498,16 @@ syntraq-ai/
 </td>
 <td align="center" width="33%">
 
+<img src="https://quartermasters.me/wp-content/uploads/2024/12/cropped-Quartermasters-Logo-1-1.png" alt="Quartermasters FZC" width="150" height="60" style="object-fit: contain;">
+
 **⚙️ Quartermasters FZC**  
 *Lead Architecture & Full-Stack Development*  
 [quartermasters.me](https://www.quartermasters.me)
 
 </td>
 <td align="center" width="33%">
+
+<img src="https://skillvenza.com/wp-content/uploads/2025/05/cropped-skillvenza-icon-512x512-1-300x236.png" alt="SkillvenzA" width="150" height="60" style="object-fit: contain;">
 
 **🧠 SkillvenzA**  
 *AI Advisory & Continuous Innovation*  
