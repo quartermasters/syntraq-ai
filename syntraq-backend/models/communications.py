@@ -1,3 +1,10 @@
+"""
+© 2025 Aliff Capital, Quartermasters FZC, and SkillvenzA. All rights reserved.
+
+Syntraq AI - CAH (Communication & Arrangement Hub) Models
+A Joint Innovation by Aliff Capital, Quartermasters FZC, and SkillvenzA
+"""
+
 from sqlalchemy import Column, Integer, String, Text, DateTime, Float, Boolean, JSON, ForeignKey, Enum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship

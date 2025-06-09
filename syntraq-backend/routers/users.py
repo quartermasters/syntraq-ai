@@ -1,7 +1,14 @@
+"""
+© 2025 Aliff Capital, Quartermasters FZC, and SkillvenzA. All rights reserved.
+
+Syntraq AI - Users API Router
+A Joint Innovation by Aliff Capital, Quartermasters FZC, and SkillvenzA
+"""
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import Optional, Dict, List
 from datetime import datetime, timedelta
 import bcrypt
@@ -19,7 +26,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
 class UserCreate(BaseModel):
-    email: EmailStr
+    email: str
     username: str
     password: str
     full_name: str
@@ -106,7 +113,7 @@ async def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
-        user=UserResponse.from_orm(user)
+        user=UserResponse.model_validate(user)
     )
 
 @router.post("/login", response_model=TokenResponse)
@@ -129,12 +136,12 @@ async def login_user(login_data: UserLogin, db: Session = Depends(get_db)):
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
-        user=UserResponse.from_orm(user)
+        user=UserResponse.model_validate(user)
     )
 
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
-    return UserResponse.from_orm(current_user)
+    return UserResponse.model_validate(current_user)
 
 @router.put("/profile")
 async def update_user_profile(

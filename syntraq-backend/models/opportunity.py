@@ -1,3 +1,10 @@
+"""
+© 2025 Aliff Capital, Quartermasters FZC, and SkillvenzA. All rights reserved.
+
+Syntraq AI - Opportunity Management Models (UOF Module)
+A Joint Innovation by Aliff Capital, Quartermasters FZC, and SkillvenzA
+"""
+
 from sqlalchemy import Column, Integer, String, Text, DateTime, Float, Boolean, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime

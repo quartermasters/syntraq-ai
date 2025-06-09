@@ -23,8 +23,10 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('auth_token')
-      window.location.href = '/login'
+      console.error('401 Unauthorized error:', error)
+      // Temporarily disable auto-redirect for debugging
+      // localStorage.removeItem('auth_token')
+      // window.location.href = '/login'
     }
     return Promise.reject(error)
   }

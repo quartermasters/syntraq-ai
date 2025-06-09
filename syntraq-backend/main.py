@@ -1,3 +1,13 @@
+"""
+© 2025 Aliff Capital, Quartermasters FZC, and SkillvenzA. All rights reserved.
+
+Syntraq AI - AI-powered government contracting opportunity management platform
+A Joint Innovation by Aliff Capital, Quartermasters FZC, and SkillvenzA
+
+No part of this software may be reproduced, copied, reverse-engineered, 
+or distributed without prior written permission from all three founding entities.
+"""
+
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
@@ -21,7 +31,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],  # Allow all origins for development
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

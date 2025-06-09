@@ -1,3 +1,10 @@
+"""
+© 2025 Aliff Capital, Quartermasters FZC, and SkillvenzA. All rights reserved.
+
+Syntraq AI - User Management Models
+A Joint Innovation by Aliff Capital, Quartermasters FZC, and SkillvenzA
+"""
+
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, JSON, Text
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime

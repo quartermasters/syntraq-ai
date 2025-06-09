@@ -1,3 +1,10 @@
+/*
+© 2025 Aliff Capital, Quartermasters FZC, and SkillvenzA. All rights reserved.
+
+Syntraq AI - Main Layout Component
+A Joint Innovation by Aliff Capital, Quartermasters FZC, and SkillvenzA
+*/
+
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
@@ -101,6 +108,27 @@ const Layout = ({ children }: LayoutProps) => {
         <main className="flex-1 p-6">
           {children}
         </main>
+        
+        {/* Footer */}
+        <footer className="bg-gray-50 border-t border-gray-200 py-4 px-6">
+          <div className="text-center">
+            <p className="text-sm text-gray-600">
+              © 2025 Syntraq AI - A Joint Innovation by{' '}
+              <a href="https://www.aliffcapital.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                Aliff Capital
+              </a>
+              ,{' '}
+              <a href="https://www.quartermasters.me" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                Quartermasters FZC
+              </a>
+              , and{' '}
+              <a href="https://www.skillvenza.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                SkillvenzA
+              </a>
+            </p>
+            <p className="text-xs text-gray-500 mt-1">All Rights Reserved.</p>
+          </div>
+        </footer>
       </div>
     </div>
   )

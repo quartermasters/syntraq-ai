@@ -14,10 +14,18 @@ const Profile = () => {
   
   const queryClient = useQueryClient()
 
-  const { data: user } = useQuery('current-user', authAPI.getCurrentUser)
+  const { data: user, error: userError } = useQuery('current-user', authAPI.getCurrentUser, {
+    retry: false,
+    onError: (error) => {
+      console.error('Profile API error:', error)
+      // Don't auto-redirect on error, let user stay on profile page
+    }
+  })
   const { data: _companyProfile } = useQuery('company-profile', () => 
-    authAPI.getCurrentUser().then(user => user.company_profile || {})
-  )
+    authAPI.getCurrentUser().then(user => user.company_profile || {}), {
+    enabled: false, // Disable this query for now
+    retry: false
+  })
 
   const setupMutation = useMutation(authAPI.setupCompany, {
     onSuccess: () => {

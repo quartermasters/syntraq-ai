@@ -1,3 +1,10 @@
+/*
+© 2025 Aliff Capital, Quartermasters FZC, and SkillvenzA. All rights reserved.
+
+Syntraq AI - Frontend Application Router
+A Joint Innovation by Aliff Capital, Quartermasters FZC, and SkillvenzA
+*/
+
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import Layout from './components/Layout'
@@ -10,6 +17,8 @@ import Profile from './pages/Profile'
 
 function App() {
   const { user, loading } = useAuth()
+  
+  console.log('App render - loading:', loading, 'user:', user)
 
   if (loading) {
     return (
@@ -19,26 +28,29 @@ function App() {
     )
   }
 
-  if (!user) {
-    return (
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    )
-  }
-
   return (
-    <Layout>
-      <Routes>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/opportunities" element={<Opportunities />} />
-        <Route path="/opportunities/:id" element={<OpportunityDetail />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
-    </Layout>
+    <Routes>
+      {!user ? (
+        // Unauthenticated routes
+        <>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </>
+      ) : (
+        // Authenticated routes
+        <>
+          <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+          <Route path="/opportunities" element={<Layout><Opportunities /></Layout>} />
+          <Route path="/opportunities/:id" element={<Layout><OpportunityDetail /></Layout>} />
+          <Route path="/profile" element={<Layout><Profile /></Layout>} />
+          <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/register" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </>
+      )}
+    </Routes>
   )
 }
 

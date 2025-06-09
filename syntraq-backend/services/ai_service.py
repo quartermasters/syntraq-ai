@@ -1,3 +1,10 @@
+"""
+© 2025 Aliff Capital, Quartermasters FZC, and SkillvenzA. All rights reserved.
+
+Syntraq AI - AI Service Engine
+A Joint Innovation by Aliff Capital, Quartermasters FZC, and SkillvenzA
+"""
+
 import openai
 import os
 import json
