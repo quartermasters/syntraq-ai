@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from 'react-query'
+import { useQuery, useMutation } from 'react-query'
 import { Link } from 'react-router-dom'
 import { opportunitiesAPI, aiAPI, decisionsAPI } from '../services/api'
 import { format } from 'date-fns'
@@ -11,7 +11,7 @@ const Opportunities = () => {
     min_relevance: ''
   })
   const [selectedOpportunities, setSelectedOpportunities] = useState<number[]>([])
-  const queryClient = useQueryClient()
+  // const queryClient = useQueryClient() // Unused for now
 
   const { data: opportunities, isLoading, refetch } = useQuery(
     ['opportunities', filters],

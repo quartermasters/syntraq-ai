@@ -15,7 +15,7 @@ const Profile = () => {
   const queryClient = useQueryClient()
 
   const { data: user } = useQuery('current-user', authAPI.getCurrentUser)
-  const { data: companyProfile } = useQuery('company-profile', () => 
+  const { data: _companyProfile } = useQuery('company-profile', () => 
     authAPI.getCurrentUser().then(user => user.company_profile || {})
   )
 

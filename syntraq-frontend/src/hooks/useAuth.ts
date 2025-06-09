@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from 'react'
+import { useState, useEffect } from 'react'
 import { authAPI } from '../services/api'
 import toast from 'react-hot-toast'
 
@@ -13,15 +13,6 @@ interface User {
   created_at: string
 }
 
-interface AuthContextType {
-  user: User | null
-  loading: boolean
-  login: (email: string, password: string) => Promise<void>
-  register: (userData: any) => Promise<void>
-  logout: () => void
-}
-
-const AuthContext = createContext<AuthContextType | null>(null)
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null)
