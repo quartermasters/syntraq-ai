@@ -1,3 +1,10 @@
+"""
+© 2025 Aliff Capital, Quartermasters FZC, and SkillvenzA. All rights reserved.
+
+Syntraq AI - CAH (Communication & Arrangement Hub) API Router
+A Joint Innovation by Aliff Capital, Quartermasters FZC, and SkillvenzA
+"""
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
@@ -505,5 +512,255 @@ async def get_communication_dashboard(
         "efficiency_metrics": {
             "avg_communications_per_day": total_communications / days_back if days_back > 0 else 0,
             "ai_automation_rate": (ai_generated / total_communications * 100) if total_communications > 0 else 0
+        }
+    }
+
+@router.get("/documents")
+async def get_communication_documents(
+    contact_id: Optional[int] = Query(None),
+    document_type: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get communication documents with filtering"""
+    
+    query = db.query(CommunicationDocument).filter(
+        CommunicationDocument.company_id == current_user.id
+    )
+    
+    if contact_id:
+        query = query.filter(CommunicationDocument.contact_id == contact_id)
+    
+    if document_type:
+        query = query.filter(CommunicationDocument.document_type == document_type)
+    
+    if status:
+        query = query.filter(CommunicationDocument.status == status)
+    
+    documents = query.order_by(CommunicationDocument.created_at.desc()).offset(skip).limit(limit).all()
+    
+    return [
+        {
+            "id": doc.id,
+            "document_name": doc.document_name,
+            "document_type": doc.document_type.value,
+            "status": doc.status,
+            "contact_name": f"{doc.contact.first_name} {doc.contact.last_name}" if doc.contact else None,
+            "contact_organization": doc.contact.organization if doc.contact else None,
+            "requires_signature": doc.requires_signature,
+            "signed_date": doc.signed_date.isoformat() if doc.signed_date else None,
+            "expiry_date": doc.expiry_date.isoformat() if doc.expiry_date else None,
+            "created_at": doc.created_at.isoformat(),
+            "confidentiality_level": doc.confidentiality_level
+        }
+        for doc in documents
+    ]
+
+@router.get("/templates")
+async def get_communication_templates(
+    template_type: Optional[str] = Query(None),
+    category: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get communication templates"""
+    
+    query = db.query(CommunicationTemplate).filter(
+        CommunicationTemplate.company_id == current_user.id,
+        CommunicationTemplate.is_active == True
+    )
+    
+    if template_type:
+        query = query.filter(CommunicationTemplate.template_type == template_type)
+    
+    if category:
+        query = query.filter(CommunicationTemplate.category == category)
+    
+    templates = query.order_by(CommunicationTemplate.usage_count.desc()).all()
+    
+    return [
+        {
+            "id": template.id,
+            "template_name": template.template_name,
+            "template_type": template.template_type.value,
+            "category": template.category,
+            "use_case": template.use_case,
+            "target_audience": template.target_audience,
+            "tone": template.tone,
+            "usage_count": template.usage_count,
+            "success_rate": template.success_rate,
+            "is_default": template.is_default
+        }
+        for template in templates
+    ]
+
+class TemplateCreateRequest(BaseModel):
+    template_name: str
+    template_type: str
+    category: str
+    subject_template: str
+    content_template: str
+    use_case: Optional[str] = None
+    target_audience: Optional[str] = None
+    tone: str = "professional"
+    variables: List[str] = []
+
+@router.post("/templates")
+async def create_communication_template(
+    request: TemplateCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Create communication template"""
+    
+    template = CommunicationTemplate(
+        company_id=current_user.id,
+        template_name=request.template_name,
+        template_type=CommunicationType(request.template_type),
+        category=request.category,
+        subject_template=request.subject_template,
+        content_template=request.content_template,
+        use_case=request.use_case,
+        target_audience=request.target_audience,
+        tone=request.tone,
+        variables=request.variables,
+        created_by=current_user.id
+    )
+    
+    db.add(template)
+    db.commit()
+    db.refresh(template)
+    
+    return {
+        "template_id": template.id,
+        "status": "success",
+        "message": "Template created successfully"
+    }
+
+@router.put("/communications/{comm_id}/send")
+async def send_communication(
+    comm_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Send a drafted communication"""
+    
+    communication = db.query(Communication).filter(
+        Communication.id == comm_id,
+        Communication.company_id == current_user.id,
+        Communication.status == CommunicationStatus.DRAFT
+    ).first()
+    
+    if not communication:
+        raise HTTPException(status_code=404, detail="Draft communication not found")
+    
+    # Update communication status
+    communication.status = CommunicationStatus.SENT
+    communication.sent_date = datetime.utcnow()
+    
+    # Update contact last contact date
+    if communication.contact:
+        communication.contact.last_contact_date = datetime.utcnow()
+    
+    db.commit()
+    
+    return {
+        "status": "success",
+        "message": "Communication sent successfully",
+        "sent_date": communication.sent_date.isoformat()
+    }
+
+@router.put("/documents/{doc_id}/sign")
+async def mark_document_signed(
+    doc_id: int,
+    signed_by: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Mark document as signed"""
+    
+    document = db.query(CommunicationDocument).filter(
+        CommunicationDocument.id == doc_id,
+        CommunicationDocument.company_id == current_user.id
+    ).first()
+    
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    document.status = "signed"
+    document.signed_date = datetime.utcnow()
+    document.signed_by = signed_by
+    
+    # Update contact NDA status if it's an NDA
+    if document.document_type.value == "nda" and document.contact:
+        document.contact.nda_signed = True
+        if document.expiry_date:
+            document.contact.nda_expiry_date = document.expiry_date
+    
+    db.commit()
+    
+    return {
+        "status": "success",
+        "message": "Document marked as signed",
+        "signed_date": document.signed_date.isoformat()
+    }
+
+@router.get("/analytics/engagement")
+async def get_engagement_analytics(
+    contact_id: Optional[int] = Query(None),
+    days_back: int = Query(90, ge=1, le=365),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get contact engagement analytics"""
+    
+    start_date = datetime.now() - timedelta(days=days_back)
+    
+    query = db.query(Communication).filter(
+        Communication.company_id == current_user.id,
+        Communication.created_at >= start_date
+    )
+    
+    if contact_id:
+        query = query.filter(Communication.contact_id == contact_id)
+    
+    communications = query.all()
+    
+    # Calculate engagement metrics
+    total_sent = len([c for c in communications if c.direction == "outbound"])
+    total_received = len([c for c in communications if c.direction == "inbound"])
+    response_rate = (total_received / total_sent * 100) if total_sent > 0 else 0
+    
+    # Average response time
+    response_times = []
+    for comm in communications:
+        if comm.responded_at and comm.sent_date:
+            response_time = (comm.responded_at - comm.sent_date).total_seconds() / 3600  # hours
+            response_times.append(response_time)
+    
+    avg_response_time = sum(response_times) / len(response_times) if response_times else 0
+    
+    # Sentiment analysis
+    sentiment_scores = [c.sentiment_score for c in communications if c.sentiment_score is not None]
+    avg_sentiment = sum(sentiment_scores) / len(sentiment_scores) if sentiment_scores else 0
+    
+    return {
+        "period_days": days_back,
+        "engagement_metrics": {
+            "total_communications": len(communications),
+            "outbound_communications": total_sent,
+            "inbound_communications": total_received,
+            "response_rate": response_rate,
+            "avg_response_time_hours": avg_response_time
+        },
+        "sentiment_analysis": {
+            "avg_sentiment_score": avg_sentiment,
+            "sentiment_trend": "positive" if avg_sentiment > 0.2 else "negative" if avg_sentiment < -0.2 else "neutral"
+        },
+        "communication_frequency": {
+            "weekly_average": len(communications) / (days_back / 7) if days_back >= 7 else len(communications)
         }
     }

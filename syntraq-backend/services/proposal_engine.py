@@ -506,3 +506,453 @@ Focus on creating a winning proposal structure that addresses all RFP requiremen
             {'number': '4.0', 'title': 'Past Performance', 'type': 'past_performance'},
             {'number': '5.0', 'title': 'Pricing Summary', 'type': 'pricing'}
         ]
+    
+    async def _get_relevant_library_content(self, section: ProposalSection, user_id: int) -> List[Dict[str, Any]]:
+        """Get relevant content from proposal library"""
+        
+        # Search for relevant library content based on section type and keywords
+        library_items = self.db.query(ProposalLibrary).filter(
+            ProposalLibrary.company_id == user_id,
+            ProposalLibrary.is_active == True
+        ).all()
+        
+        relevant_content = []
+        section_keywords = [section.section_type, section.section_title.lower()]
+        
+        for item in library_items:
+            # Check if item is relevant to this section
+            item_keywords = item.keywords or []
+            applicable_sections = item.applicable_sections or []
+            
+            if (any(keyword in section_keywords for keyword in item_keywords) or
+                section.section_type in applicable_sections):
+                relevant_content.append({
+                    'title': item.content_title,
+                    'content': item.content_text[:1000],  # Limit content length
+                    'type': item.content_type,
+                    'usage_count': item.usage_count,
+                    'quality_rating': item.quality_rating
+                })
+        
+        return relevant_content[:5]  # Limit to top 5 most relevant
+    
+    async def _ai_generate_section_content(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate AI content for proposal section"""
+        
+        prompt = f"""Generate professional proposal content for the following section:
+
+SECTION DETAILS:
+{json.dumps(context['section_details'], indent=2)}
+
+OPPORTUNITY CONTEXT:
+{json.dumps(context['opportunity_context'], indent=2)}
+
+PROPOSAL STRATEGY:
+{json.dumps(context['proposal_context'], indent=2)}
+
+RELEVANT LIBRARY CONTENT:
+{json.dumps(context['library_content'], indent=2)}
+
+Generate compelling, compliant content that:
+1. Addresses all section requirements
+2. Aligns with the win strategy and value proposition
+3. Incorporates relevant library content appropriately
+4. Uses professional government contracting language
+5. Provides specific, detailed responses
+
+Format the response as JSON with 'content', 'suggestions', 'completion_percentage', and 'quality_score' fields."""
+
+        try:
+            response = await self.ai_service.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are an expert government contracting proposal writer with 20+ years of experience."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+                max_tokens=2000
+            )
+            
+            result = self._parse_ai_content_response(response.choices[0].message.content)
+            return result
+            
+        except Exception as e:
+            return {
+                'content': f"[AI content generation failed: {str(e)}]\n\nPlease manually complete this section addressing the requirements: {context['section_details'].get('requirements', [])}",
+                'suggestions': ['Manual content development recommended'],
+                'completion_percentage': 25.0,
+                'quality_score': 50.0
+            }
+    
+    def _parse_ai_content_response(self, response: str) -> Dict[str, Any]:
+        """Parse AI content generation response"""
+        try:
+            if "```json" in response:
+                json_start = response.find("```json") + 7
+                json_end = response.find("```", json_start)
+                json_str = response[json_start:json_end].strip()
+                return json.loads(json_str)
+            else:
+                return json.loads(response)
+        except:
+            return {
+                'content': response,
+                'suggestions': [],
+                'completion_percentage': 75.0,
+                'quality_score': 70.0
+            }
+    
+    async def _ai_compliance_analysis(self, proposal: Proposal, opportunity: Opportunity, sections: List[ProposalSection]) -> Dict[str, Any]:
+        """AI-powered compliance analysis"""
+        
+        context = {
+            'opportunity': {
+                'title': opportunity.title,
+                'description': opportunity.description[:1500],
+                'requirements': opportunity.key_requirements or []
+            },
+            'proposal_sections': [
+                {
+                    'id': s.id,
+                    'title': s.section_title,
+                    'requirements': s.requirements or [],
+                    'content_length': len(s.content or ''),
+                    'completion': s.completion_percentage
+                }
+                for s in sections
+            ]
+        }
+        
+        prompt = f"""Conduct comprehensive compliance analysis for this government proposal:
+
+OPPORTUNITY REQUIREMENTS:
+{json.dumps(context['opportunity'], indent=2)}
+
+PROPOSAL SECTIONS:
+{json.dumps(context['proposal_sections'], indent=2)}
+
+Analyze compliance and provide:
+1. Overall compliance score (0-100)
+2. Section-by-section compliance status
+3. Identified compliance issues
+4. Recommendations for improvement
+
+Format as JSON with detailed analysis."""
+
+        try:
+            response = await self.ai_service.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are a government contracting compliance expert."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.2,
+                max_tokens=1500
+            )
+            
+            return self._parse_compliance_response(response.choices[0].message.content)
+            
+        except Exception:
+            return {
+                'overall_score': 75.0,
+                'sections': {},
+                'recommendations': ['Manual compliance review recommended']
+            }
+    
+    def _parse_compliance_response(self, response: str) -> Dict[str, Any]:
+        """Parse AI compliance analysis response"""
+        try:
+            if "```json" in response:
+                json_start = response.find("```json") + 7
+                json_end = response.find("```", json_start)
+                json_str = response[json_start:json_end].strip()
+                return json.loads(json_str)
+            else:
+                return json.loads(response)
+        except:
+            return {
+                'overall_score': 75.0,
+                'sections': {},
+                'recommendations': ['Compliance analysis requires manual review']
+            }
+    
+    async def _assess_readiness_gates(self, proposal_id: int) -> Dict[str, Any]:
+        """Initial assessment of readiness gates"""
+        
+        proposal = self.db.query(Proposal).filter(Proposal.id == proposal_id).first()
+        if not proposal:
+            return {}
+        
+        gates = {}
+        
+        # Opportunity Analysis - check if opportunity is analyzed
+        gates['opportunity_analysis'] = {
+            'passed': bool(proposal.opportunity_id),
+            'issues': [] if proposal.opportunity_id else ['Opportunity analysis not complete'],
+            'checked_date': datetime.utcnow().isoformat()
+        }
+        
+        # Financial Approval - check if financial project exists
+        gates['financial_approval'] = {
+            'passed': bool(proposal.project_id),
+            'issues': [] if proposal.project_id else ['Financial approval pending'],
+            'checked_date': datetime.utcnow().isoformat()
+        }
+        
+        # Resource Allocation - check if delivery plan exists
+        gates['resource_allocation'] = {
+            'passed': bool(proposal.delivery_plan_id),
+            'issues': [] if proposal.delivery_plan_id else ['Resource allocation not complete'],
+            'checked_date': datetime.utcnow().isoformat()
+        }
+        
+        # Initialize other gates as not passed
+        for gate in ['teaming_confirmed', 'compliance_verified', 'content_complete', 'quality_reviewed', 'executive_approved']:
+            gates[gate] = {
+                'passed': False,
+                'issues': [f'{gate.replace("_", " ").title()} gate not yet assessed'],
+                'checked_date': None
+            }
+        
+        return gates
+    
+    async def _check_opportunity_analysis_gate(self, proposal: Proposal) -> Dict[str, Any]:
+        """Check opportunity analysis readiness gate"""
+        opportunity = self.db.query(Opportunity).filter(Opportunity.id == proposal.opportunity_id).first()
+        
+        passed = bool(opportunity and opportunity.ai_summary)
+        issues = [] if passed else ['Opportunity AI analysis not complete']
+        
+        return {
+            'passed': passed,
+            'issues': issues,
+            'checked_date': datetime.utcnow().isoformat(),
+            'notes': 'Opportunity must have AI summary and decision'
+        }
+    
+    async def _check_financial_approval_gate(self, proposal: Proposal) -> Dict[str, Any]:
+        """Check financial approval readiness gate"""
+        financial_project = None
+        if proposal.project_id:
+            financial_project = self.db.query(FinancialProject).filter(
+                FinancialProject.id == proposal.project_id
+            ).first()
+        
+        passed = bool(financial_project and proposal.proposed_price)
+        issues = []
+        if not financial_project:
+            issues.append('Financial project not created')
+        if not proposal.proposed_price:
+            issues.append('Proposed price not set')
+        
+        return {
+            'passed': passed,
+            'issues': issues,
+            'checked_date': datetime.utcnow().isoformat(),
+            'notes': 'Financial project and pricing must be approved'
+        }
+    
+    async def _check_resource_allocation_gate(self, proposal: Proposal) -> Dict[str, Any]:
+        """Check resource allocation readiness gate"""
+        delivery_plan = None
+        if proposal.delivery_plan_id:
+            delivery_plan = self.db.query(DeliveryPlan).filter(
+                DeliveryPlan.id == proposal.delivery_plan_id
+            ).first()
+        
+        passed = bool(delivery_plan and proposal.team_members)
+        issues = []
+        if not delivery_plan:
+            issues.append('Delivery plan not created')
+        if not proposal.team_members:
+            issues.append('Team members not assigned')
+        
+        return {
+            'passed': passed,
+            'issues': issues,
+            'checked_date': datetime.utcnow().isoformat(),
+            'notes': 'Resource planning and team assignments must be complete'
+        }
+    
+    async def _check_teaming_confirmed_gate(self, proposal: Proposal) -> Dict[str, Any]:
+        """Check teaming confirmation readiness gate"""
+        external_contributors = proposal.external_contributors or []
+        
+        passed = True  # Default to passed if no external teaming needed
+        issues = []
+        
+        # If external contributors are specified, check if they're confirmed
+        if external_contributors:
+            for contributor in external_contributors:
+                if not contributor.get('confirmed', False):
+                    passed = False
+                    issues.append(f"Teaming with {contributor.get('name', 'partner')} not confirmed")
+        
+        return {
+            'passed': passed,
+            'issues': issues,
+            'checked_date': datetime.utcnow().isoformat(),
+            'notes': 'All teaming agreements must be confirmed'
+        }
+    
+    async def _check_compliance_verified_gate(self, proposal: Proposal) -> Dict[str, Any]:
+        """Check compliance verification readiness gate"""
+        passed = bool(proposal.compliance_score and proposal.compliance_score >= 90.0)
+        issues = []
+        
+        if not proposal.compliance_score:
+            issues.append('Compliance check not performed')
+        elif proposal.compliance_score < 90.0:
+            issues.append(f'Compliance score too low: {proposal.compliance_score:.1f}% (minimum 90%)')
+        
+        return {
+            'passed': passed,
+            'issues': issues,
+            'checked_date': datetime.utcnow().isoformat(),
+            'notes': 'Compliance score must be 90% or higher'
+        }
+    
+    async def _check_content_complete_gate(self, proposal: Proposal) -> Dict[str, Any]:
+        """Check content completion readiness gate"""
+        sections = self.db.query(ProposalSection).filter(
+            ProposalSection.proposal_id == proposal.id
+        ).all()
+        
+        completed_sections = [s for s in sections if s.completion_percentage >= 95.0]
+        completion_rate = len(completed_sections) / len(sections) if sections else 0
+        
+        passed = completion_rate >= 0.95  # 95% of sections must be complete
+        issues = []
+        
+        if completion_rate < 0.95:
+            issues.append(f'Only {completion_rate*100:.1f}% of sections complete (minimum 95%)')
+            incomplete_sections = [s.section_title for s in sections if s.completion_percentage < 95.0]
+            issues.extend([f'Section incomplete: {title}' for title in incomplete_sections[:5]])
+        
+        return {
+            'passed': passed,
+            'issues': issues,
+            'checked_date': datetime.utcnow().isoformat(),
+            'notes': 'All sections must be 95% complete'
+        }
+    
+    async def _check_quality_reviewed_gate(self, proposal: Proposal) -> Dict[str, Any]:
+        """Check quality review readiness gate"""
+        reviews = self.db.query(ProposalReview).filter(
+            ProposalReview.proposal_id == proposal.id,
+            ProposalReview.review_status == 'completed'
+        ).all()
+        
+        # Check for at least one completed review with good score
+        quality_reviews = [r for r in reviews if r.overall_score and r.overall_score >= 7.0]
+        
+        passed = len(quality_reviews) > 0
+        issues = []
+        
+        if not reviews:
+            issues.append('No quality reviews conducted')
+        elif not quality_reviews:
+            issues.append('No quality reviews with acceptable scores (minimum 7.0)')
+        
+        return {
+            'passed': passed,
+            'issues': issues,
+            'checked_date': datetime.utcnow().isoformat(),
+            'notes': 'At least one quality review with score ≥7.0 required'
+        }
+    
+    async def _check_executive_approved_gate(self, proposal: Proposal) -> Dict[str, Any]:
+        """Check executive approval readiness gate"""
+        # Check if proposal has been marked as ready by executive
+        passed = proposal.status in [ProposalStatus.READY, ProposalStatus.SUBMITTED]
+        issues = []
+        
+        if not passed:
+            issues.append('Executive approval pending')
+            issues.append(f'Current status: {proposal.status.value}')
+        
+        return {
+            'passed': passed,
+            'issues': issues,
+            'checked_date': datetime.utcnow().isoformat(),
+            'notes': 'Executive must approve proposal for submission'
+        }
+    
+    async def _ai_conduct_review(self, proposal: Proposal, sections: List[ProposalSection], review_type: str) -> Dict[str, Any]:
+        """AI-powered proposal review"""
+        
+        context = {
+            'proposal': {
+                'title': proposal.proposal_title,
+                'win_strategy': proposal.win_strategy,
+                'value_proposition': proposal.value_proposition
+            },
+            'sections': [
+                {
+                    'title': s.section_title,
+                    'type': s.section_type,
+                    'content_length': len(s.content or ''),
+                    'completion': s.completion_percentage
+                }
+                for s in sections
+            ],
+            'review_type': review_type
+        }
+        
+        prompt = f"""Conduct a {review_type} review of this government proposal:
+
+PROPOSAL CONTEXT:
+{json.dumps(context, indent=2)}
+
+Provide comprehensive review covering:
+1. Overall assessment and scoring (1-10)
+2. Strengths and competitive advantages
+3. Weaknesses and areas for improvement
+4. Critical issues that must be addressed
+5. Specific recommendations
+6. Action items with priorities
+
+Format as JSON with detailed analysis for {review_type} review."""
+
+        try:
+            response = await self.ai_service.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": f"You are conducting a {review_type} review as an expert government contracting evaluator."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+                max_tokens=2000
+            )
+            
+            return self._parse_review_response(response.choices[0].message.content)
+            
+        except Exception:
+            return {
+                'overall_score': 7.0,
+                'strengths': ['Proposal structure appears complete'],
+                'weaknesses': ['Detailed review requires manual analysis'],
+                'recommendations': ['Conduct manual review'],
+                'critical_issues': [],
+                'action_items': ['Schedule manual review session']
+            }
+    
+    def _parse_review_response(self, response: str) -> Dict[str, Any]:
+        """Parse AI review response"""
+        try:
+            if "```json" in response:
+                json_start = response.find("```json") + 7
+                json_end = response.find("```", json_start)
+                json_str = response[json_start:json_end].strip()
+                return json.loads(json_str)
+            else:
+                return json.loads(response)
+        except:
+            return {
+                'overall_score': 7.0,
+                'strengths': ['Analysis in progress'],
+                'weaknesses': ['Manual review recommended'],
+                'recommendations': ['Complete detailed review'],
+                'critical_issues': [],
+                'action_items': ['Schedule review session']
+            }

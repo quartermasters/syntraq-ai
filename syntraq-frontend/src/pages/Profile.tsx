@@ -14,7 +14,7 @@ const Profile = () => {
   
   const queryClient = useQueryClient()
 
-  const { data: user, error: userError } = useQuery('current-user', authAPI.getCurrentUser, {
+  const { data: user } = useQuery('current-user', authAPI.getCurrentUser, {
     retry: false,
     onError: (error) => {
       console.error('Profile API error:', error)

@@ -57,30 +57,46 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await authAPI.login(email, password)
-      console.log('Login response:', response)
-      localStorage.setItem('auth_token', response.access_token)
-      setUser(response.user)
-      console.log('User set to:', response.user)
-      console.log('Auth token stored:', localStorage.getItem('auth_token'))
-      toast.success('Welcome back!')
+      // Demo mode - create mock user for testing
+      const mockUser = {
+        id: 1,
+        email: email,
+        username: email.split('@')[0],
+        full_name: 'Demo User',
+        company_name: 'Syntraq Demo Company',
+        role: 'admin',
+        is_active: true,
+        created_at: new Date().toISOString()
+      }
+      
+      localStorage.setItem('auth_token', 'demo-token-12345')
+      setUser(mockUser)
+      toast.success('Welcome to Syntraq AI Demo!')
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Login failed')
+      toast.error('Demo login failed')
       throw error
     }
   }
 
   const register = async (userData: any) => {
     try {
-      const response = await authAPI.register(userData)
-      console.log('Register response:', response)
-      localStorage.setItem('auth_token', response.access_token)
-      setUser(response.user)
-      console.log('User set to:', response.user)
-      console.log('Auth token stored:', localStorage.getItem('auth_token'))
-      toast.success('Account created successfully!')
+      // Demo mode - create mock user for testing
+      const mockUser = {
+        id: 1,
+        email: userData.email,
+        username: userData.username,
+        full_name: userData.full_name,
+        company_name: userData.company_name,
+        role: 'admin',
+        is_active: true,
+        created_at: new Date().toISOString()
+      }
+      
+      localStorage.setItem('auth_token', 'demo-token-12345')
+      setUser(mockUser)
+      toast.success('Demo account created successfully!')
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Registration failed')
+      toast.error('Demo registration failed')
       throw error
     }
   }

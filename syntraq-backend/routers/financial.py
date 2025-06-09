@@ -15,6 +15,14 @@ from models.user import User
 
 router = APIRouter()
 
+# Add copyright notice at top of router
+"""
+© 2025 Aliff Capital, Quartermasters FZC, and SkillvenzA. All rights reserved.
+
+Syntraq AI - Financial API Router (FVMS Module)
+A Joint Innovation by Aliff Capital, Quartermasters FZC, and SkillvenzA
+"""
+
 class ProjectCreateRequest(BaseModel):
     project_name: str
     opportunity_id: Optional[int] = None
@@ -369,6 +377,277 @@ async def add_project_expense(
     db.add(expense)
     db.commit()
     db.refresh(expense)
+    
+    return {
+        "status": "success",
+        "expense_id": expense.id,
+        "message": "Expense added successfully"
+    }
+
+@router.get("/dashboard")
+async def get_financial_dashboard(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get comprehensive financial dashboard"""
+    
+    service = FinancialAnalysisService(db)
+    
+    try:
+        dashboard = await service.generate_financial_dashboard(current_user.id)
+        return dashboard
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Dashboard generation failed: {str(e)}")
+
+@router.get("/treasury/dashboard")
+async def get_treasury_dashboard(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get treasury management dashboard with cash flow forecasting"""
+    
+    service = FinancialAnalysisService(db)
+    
+    try:
+        treasury_dashboard = await service.generate_treasury_dashboard(current_user.id)
+        return treasury_dashboard
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Treasury dashboard generation failed: {str(e)}")
+
+@router.get("/alerts")
+async def get_financial_alerts(
+    severity: Optional[str] = Query(None),
+    status: Optional[str] = Query(None, description="active, acknowledged, resolved"),
+    limit: int = Query(50, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get financial alerts for user's projects"""
+    
+    # Get user's projects
+    user_projects = db.query(FinancialProject).filter(
+        FinancialProject.created_by == current_user.id
+    ).all()
+    
+    project_ids = [p.id for p in user_projects]
+    
+    # Query alerts
+    query = db.query(FinancialAlert).filter(
+        FinancialAlert.project_id.in_(project_ids)
+    )
+    
+    if severity:
+        query = query.filter(FinancialAlert.severity == severity)
+    
+    if status:
+        query = query.filter(FinancialAlert.status == status)
+    
+    alerts = query.order_by(FinancialAlert.created_at.desc()).limit(limit).all()
+    
+    return [
+        {
+            "id": alert.id,
+            "project_id": alert.project_id,
+            "alert_type": alert.alert_type,
+            "severity": alert.severity,
+            "title": alert.title,
+            "message": alert.message,
+            "threshold_value": alert.threshold_value,
+            "current_value": alert.current_value,
+            "variance_percentage": alert.variance_percentage,
+            "status": alert.status,
+            "recommended_actions": alert.recommended_actions,
+            "created_at": alert.created_at.isoformat(),
+            "acknowledged_at": alert.acknowledged_at.isoformat() if alert.acknowledged_at else None
+        }
+        for alert in alerts
+    ]
+
+@router.post("/alerts/{alert_id}/acknowledge")
+async def acknowledge_alert(
+    alert_id: int,
+    action_taken: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Acknowledge financial alert"""
+    
+    alert = db.query(FinancialAlert).filter(FinancialAlert.id == alert_id).first()
+    
+    if not alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    
+    # Verify user owns the project
+    project = db.query(FinancialProject).filter(
+        FinancialProject.id == alert.project_id,
+        FinancialProject.created_by == current_user.id
+    ).first()
+    
+    if not project:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Update alert
+    alert.status = "acknowledged"
+    alert.acknowledged_by = current_user.id
+    alert.acknowledged_at = datetime.utcnow()
+    if action_taken:
+        alert.action_taken = action_taken
+    
+    db.commit()
+    
+    return {
+        "status": "success",
+        "message": "Alert acknowledged successfully"
+    }
+
+@router.get("/company/profile")
+async def get_company_financials(
+    fiscal_year: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get company financial profile"""
+    
+    year = fiscal_year or datetime.now().year
+    
+    company_financials = db.query(CompanyFinancials).filter(
+        CompanyFinancials.user_id == current_user.id,
+        CompanyFinancials.fiscal_year == year
+    ).first()
+    
+    if not company_financials:
+        # Return default structure
+        return {
+            "fiscal_year": year,
+            "has_data": False,
+            "message": "No financial data available for this year"
+        }
+    
+    return {
+        "fiscal_year": company_financials.fiscal_year,
+        "has_data": True,
+        "revenue": {
+            "total_revenue": company_financials.total_revenue,
+            "government_revenue": company_financials.government_revenue,
+            "commercial_revenue": company_financials.commercial_revenue,
+            "recurring_revenue": company_financials.recurring_revenue
+        },
+        "costs": {
+            "total_costs": company_financials.total_costs,
+            "direct_costs": company_financials.direct_costs,
+            "indirect_costs": company_financials.indirect_costs,
+            "overhead_costs": company_financials.overhead_costs,
+            "ga_costs": company_financials.ga_costs
+        },
+        "profitability": {
+            "gross_profit": company_financials.gross_profit,
+            "net_profit": company_financials.net_profit,
+            "ebitda": company_financials.ebitda,
+            "gross_margin_percentage": company_financials.gross_margin_percentage,
+            "net_margin_percentage": company_financials.net_margin_percentage
+        },
+        "cash_flow": {
+            "operating_cash_flow": company_financials.operating_cash_flow,
+            "free_cash_flow": company_financials.free_cash_flow,
+            "cash_balance": company_financials.cash_balance,
+            "accounts_receivable": company_financials.accounts_receivable
+        },
+        "rates": {
+            "overhead_rate": company_financials.overhead_rate,
+            "ga_rate": company_financials.ga_rate,
+            "fringe_rate": company_financials.fringe_rate,
+            "average_billing_rate": company_financials.average_billing_rate
+        },
+        "audit_info": {
+            "is_audited": company_financials.is_audited,
+            "audit_firm": company_financials.audit_firm,
+            "data_source": company_financials.data_source
+        },
+        "last_updated": company_financials.updated_at.isoformat()
+    }
+
+class CompanyFinancialsUpdateRequest(BaseModel):
+    fiscal_year: int
+    total_revenue: float
+    government_revenue: float
+    commercial_revenue: Optional[float] = 0
+    total_costs: float
+    direct_costs: float
+    indirect_costs: float
+    overhead_rate: float
+    ga_rate: float
+    fringe_rate: float
+    cash_balance: Optional[float] = None
+    is_audited: bool = False
+    audit_firm: Optional[str] = None
+
+@router.post("/company/profile")
+async def update_company_financials(
+    request: CompanyFinancialsUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update company financial profile"""
+    
+    # Check if record exists
+    existing = db.query(CompanyFinancials).filter(
+        CompanyFinancials.user_id == current_user.id,
+        CompanyFinancials.fiscal_year == request.fiscal_year
+    ).first()
+    
+    if existing:
+        # Update existing record
+        for field, value in request.dict().items():
+            setattr(existing, field, value)
+        
+        # Calculate derived fields
+        existing.commercial_revenue = existing.total_revenue - existing.government_revenue
+        existing.overhead_costs = existing.direct_costs * (existing.overhead_rate / 100)
+        existing.ga_costs = (existing.direct_costs + existing.overhead_costs) * (existing.ga_rate / 100)
+        existing.gross_profit = existing.total_revenue - existing.total_costs
+        existing.net_profit = existing.gross_profit  # Simplified
+        existing.gross_margin_percentage = (existing.gross_profit / existing.total_revenue * 100) if existing.total_revenue > 0 else 0
+        existing.net_margin_percentage = (existing.net_profit / existing.total_revenue * 100) if existing.total_revenue > 0 else 0
+        existing.updated_at = datetime.utcnow()
+        
+        company_financials = existing
+    else:
+        # Create new record
+        data = request.dict()
+        
+        # Calculate derived fields
+        commercial_revenue = data['total_revenue'] - data['government_revenue']
+        overhead_costs = data['direct_costs'] * (data['overhead_rate'] / 100)
+        ga_costs = (data['direct_costs'] + overhead_costs) * (data['ga_rate'] / 100)
+        gross_profit = data['total_revenue'] - data['total_costs']
+        net_profit = gross_profit  # Simplified
+        gross_margin_percentage = (gross_profit / data['total_revenue'] * 100) if data['total_revenue'] > 0 else 0
+        net_margin_percentage = (net_profit / data['total_revenue'] * 100) if data['total_revenue'] > 0 else 0
+        
+        company_financials = CompanyFinancials(
+            user_id=current_user.id,
+            commercial_revenue=commercial_revenue,
+            overhead_costs=overhead_costs,
+            ga_costs=ga_costs,
+            gross_profit=gross_profit,
+            net_profit=net_profit,
+            gross_margin_percentage=gross_margin_percentage,
+            net_margin_percentage=net_margin_percentage,
+            **data
+        )
+        
+        db.add(company_financials)
+    
+    db.commit()
+    db.refresh(company_financials)
+    
+    return {
+        "status": "success",
+        "message": "Company financials updated successfully",
+        "fiscal_year": company_financials.fiscal_year
+    }
     
     return {
         "expense_id": expense.id,

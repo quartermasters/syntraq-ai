@@ -21,6 +21,10 @@ const Layout = ({ children }: LayoutProps) => {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: '📊' },
     { name: 'Opportunities', href: '/opportunities', icon: '🎯' },
+    { name: 'AI Team (ARTS)', href: '/arts', icon: '🤖' },
+    { name: 'Financial (FVMS)', href: '/financial', icon: '💰' },
+    { name: 'Proposals (PME)', href: '/proposals', icon: '📄' },
+    { name: 'Communications (CAH)', href: '/communications', icon: '💬' },
     { name: 'Profile', href: '/profile', icon: '👤' },
   ]
 

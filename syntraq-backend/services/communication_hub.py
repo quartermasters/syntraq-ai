@@ -1,3 +1,10 @@
+"""
+© 2025 Aliff Capital, Quartermasters FZC, and SkillvenzA. All rights reserved.
+
+Syntraq AI - CAH (Communication & Arrangement Hub) Service
+A Joint Innovation by Aliff Capital, Quartermasters FZC, and SkillvenzA
+"""
+
 from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
@@ -588,3 +595,389 @@ Best regards,
             'suggestions': ['Manual review recommended'],
             'next_steps': ['Send communication', 'Schedule follow-up']
         }
+    
+    async def _generate_ai_nda_content(
+        self,
+        contact: Contact,
+        user: Any,
+        context: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Generate AI-powered NDA content"""
+        
+        nda_context = {
+            'disclosing_party': {
+                'name': user.company_name if hasattr(user, 'company_name') else 'Company',
+                'address': context.get('company_address', 'Address on file')
+            },
+            'receiving_party': {
+                'name': contact.organization,
+                'contact_name': f"{contact.first_name} {contact.last_name}",
+                'address': f"{contact.address_line1 or ''}, {contact.city or ''}, {contact.state or ''}"
+            },
+            'purpose': context.get('purpose', 'Business opportunity evaluation'),
+            'duration_months': context.get('duration_months', 24)
+        }
+        
+        prompt = f"""Generate a professional Non-Disclosure Agreement (NDA):
+
+PARTIES: {json.dumps(nda_context, indent=2)}
+
+PURPOSE: {context.get('purpose', 'Confidential business discussions')}
+
+Create a comprehensive NDA document with:
+1. Clear definitions of confidential information
+2. Obligations of receiving party
+3. Duration and termination clauses
+4. Standard legal protections
+
+Format as JSON with 'content' and 'key_terms' fields."""
+        
+        try:
+            response = await self.ai_service.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are a legal document specialist creating professional NDAs."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.2,
+                max_tokens=2000
+            )
+            
+            return self._parse_ai_legal_response(response.choices[0].message.content)
+            
+        except Exception as e:
+            return {
+                'content': f"[Standard NDA template for {contact.organization}]",
+                'key_terms': {'duration': '24 months', 'purpose': context.get('purpose', 'Business discussions')},
+                'confidence_score': 50
+            }
+    
+    async def _generate_teaming_agreement(
+        self,
+        contact: Contact,
+        opportunity: Opportunity,
+        teaming_details: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Generate teaming agreement content"""
+        
+        agreement_context = {
+            'opportunity': {
+                'title': opportunity.title,
+                'agency': opportunity.agency,
+                'notice_id': opportunity.notice_id,
+                'due_date': opportunity.response_deadline.isoformat() if opportunity.response_deadline else None
+            },
+            'partner': {
+                'name': contact.organization,
+                'contact': f"{contact.first_name} {contact.last_name}",
+                'role': teaming_details.get('role', 'subcontractor')
+            },
+            'teaming_details': teaming_details
+        }
+        
+        prompt = f"""Generate a teaming agreement for government contracting:
+
+OPPORTUNITY: {json.dumps(agreement_context['opportunity'], indent=2)}
+
+PARTNER: {json.dumps(agreement_context['partner'], indent=2)}
+
+TEAMING DETAILS: {json.dumps(teaming_details, indent=2)}
+
+Create a comprehensive teaming agreement covering:
+1. Roles and responsibilities
+2. Work allocation and scope
+3. Revenue sharing
+4. Compliance requirements
+5. Performance standards
+
+Format as JSON with 'content' and 'key_terms' fields."""
+        
+        try:
+            response = await self.ai_service.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are a government contracting legal specialist."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.2,
+                max_tokens=2000
+            )
+            
+            return self._parse_ai_legal_response(response.choices[0].message.content)
+            
+        except Exception as e:
+            return {
+                'content': f"[Teaming agreement template for {opportunity.title}]",
+                'key_terms': teaming_details,
+                'confidence_score': 50
+            }
+    
+    async def _generate_quote_request_document(
+        self,
+        contact: Contact,
+        requirements: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Generate quote request document"""
+        
+        quote_context = {
+            'vendor': {
+                'name': contact.organization,
+                'contact': f"{contact.first_name} {contact.last_name}"
+            },
+            'requirements': requirements,
+            'due_date': requirements.get('response_deadline', (datetime.now() + timedelta(days=10)).isoformat())
+        }
+        
+        prompt = f"""Generate a professional quote request document:
+
+VENDOR: {json.dumps(quote_context['vendor'], indent=2)}
+
+REQUIREMENTS: {json.dumps(requirements, indent=2)}
+
+Create a detailed quote request covering:
+1. Scope of work/services
+2. Technical specifications
+3. Delivery requirements
+4. Pricing format required
+5. Evaluation criteria
+
+Format as JSON with 'content' and 'requirements' fields."""
+        
+        try:
+            response = await self.ai_service.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are a procurement specialist creating professional quote requests."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.2,
+                max_tokens=1500
+            )
+            
+            return self._parse_ai_quote_response(response.choices[0].message.content)
+            
+        except Exception as e:
+            return {
+                'content': f"[Quote request for {contact.organization}]",
+                'requirements': requirements,
+                'confidence_score': 50
+            }
+    
+    async def _ai_analyze_communication(self, communication: Communication) -> Dict[str, Any]:
+        """AI analysis of communication content"""
+        
+        analysis_prompt = f"""Analyze this business communication:
+
+SUBJECT: {communication.subject}
+
+CONTENT: {communication.content[:1500]}
+
+TYPE: {communication.communication_type.value}
+
+Provide comprehensive analysis including:
+1. Sentiment score (-1 to 1)
+2. Key topics (list)
+3. Action items (list)
+4. Urgency level (low/medium/high)
+5. Response required (true/false)
+
+Format as JSON."""
+        
+        try:
+            response = await self.ai_service.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are a communication analysis expert."},
+                    {"role": "user", "content": analysis_prompt}
+                ],
+                temperature=0.2,
+                max_tokens=800
+            )
+            
+            return self._parse_ai_analysis_response(response.choices[0].message.content)
+            
+        except Exception as e:
+            return {
+                'sentiment_score': 0.0,
+                'sentiment_label': 'neutral',
+                'key_topics': [],
+                'action_items': [],
+                'urgency_level': 'medium',
+                'response_required': True
+            }
+    
+    async def _analyze_follow_up_strategy(
+        self,
+        contact: Contact,
+        opportunity_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Analyze optimal follow-up strategy"""
+        
+        # Get communication history
+        communications = self.db.query(Communication).filter(
+            Communication.contact_id == contact.id
+        ).order_by(Communication.created_at.desc()).limit(10).all()
+        
+        strategy_context = {
+            'contact_profile': {
+                'relationship_level': contact.relationship_level,
+                'response_rate': contact.response_rate or 0.5,
+                'avg_response_time': contact.avg_response_time_hours or 48,
+                'preferred_communication': contact.preferred_communication
+            },
+            'communication_history': [
+                {
+                    'type': comm.communication_type.value,
+                    'date': comm.created_at.isoformat(),
+                    'response_received': comm.responded_at is not None
+                }
+                for comm in communications
+            ]
+        }
+        
+        return {
+            'optimal_frequency_days': 5 if contact.response_rate and contact.response_rate > 0.7 else 7,
+            'sequence_length': 3 if contact.relationship_level == 'established' else 5,
+            'tone_progression': ['professional', 'friendly', 'urgent'],
+            'success_probability': min((contact.response_rate or 0.3) * 100, 85)
+        }
+    
+    async def _generate_ai_follow_up_sequence(
+        self,
+        contact: Contact,
+        strategy: Dict[str, Any],
+        sequence_type: str
+    ) -> Dict[str, Any]:
+        """Generate AI-powered follow-up sequence"""
+        
+        sequence_prompt = f"""Generate a follow-up sequence:
+
+CONTACT: {contact.first_name} {contact.last_name} at {contact.organization}
+RELATIONSHIP: {contact.relationship_level}
+STRATEGY: {json.dumps(strategy, indent=2)}
+SEQUENCE TYPE: {sequence_type}
+
+Create {strategy['sequence_length']} follow-up messages with:
+1. Escalating urgency/tone
+2. Different value propositions
+3. Various call-to-action approaches
+4. Appropriate timing intervals
+
+Format as JSON with 'follow_ups' array and 'total_duration_days'."""
+        
+        try:
+            response = await self.ai_service.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are a business development follow-up specialist."},
+                    {"role": "user", "content": sequence_prompt}
+                ],
+                temperature=0.4,
+                max_tokens=2000
+            )
+            
+            return self._parse_ai_sequence_response(response.choices[0].message.content, strategy)
+            
+        except Exception as e:
+            return {
+                'follow_ups': [
+                    {
+                        'days_offset': 7,
+                        'subject': f"Following up - {contact.organization}",
+                        'content': f"Hi {contact.first_name},\n\nI wanted to follow up on our previous discussion. Please let me know if you have any questions.\n\nBest regards",
+                        'confidence_score': 60
+                    }
+                ],
+                'total_duration_days': 7,
+                'success_probability': 50
+            }
+    
+    def _parse_ai_legal_response(self, response: str) -> Dict[str, Any]:
+        """Parse AI legal document response"""
+        try:
+            if "```json" in response:
+                json_start = response.find("```json") + 7
+                json_end = response.find("```", json_start)
+                json_str = response[json_start:json_end].strip()
+            else:
+                json_str = response
+            
+            return json.loads(json_str)
+        except:
+            return {
+                'content': response[:2000] if len(response) > 2000 else response,
+                'key_terms': {},
+                'confidence_score': 50
+            }
+    
+    def _parse_ai_quote_response(self, response: str) -> Dict[str, Any]:
+        """Parse AI quote request response"""
+        try:
+            if "```json" in response:
+                json_start = response.find("```json") + 7
+                json_end = response.find("```", json_start)
+                json_str = response[json_start:json_end].strip()
+            else:
+                json_str = response
+            
+            return json.loads(json_str)
+        except:
+            return {
+                'content': response[:1500] if len(response) > 1500 else response,
+                'requirements': {},
+                'confidence_score': 50
+            }
+    
+    def _parse_ai_analysis_response(self, response: str) -> Dict[str, Any]:
+        """Parse AI communication analysis response"""
+        try:
+            if "```json" in response:
+                json_start = response.find("```json") + 7
+                json_end = response.find("```", json_start)
+                json_str = response[json_start:json_end].strip()
+            else:
+                json_str = response
+            
+            parsed = json.loads(json_str)
+            
+            # Ensure sentiment label is set
+            if 'sentiment_score' in parsed and 'sentiment_label' not in parsed:
+                score = parsed['sentiment_score']
+                if score > 0.3:
+                    parsed['sentiment_label'] = 'positive'
+                elif score < -0.3:
+                    parsed['sentiment_label'] = 'negative'
+                else:
+                    parsed['sentiment_label'] = 'neutral'
+            
+            return parsed
+        except:
+            return {
+                'sentiment_score': 0.0,
+                'sentiment_label': 'neutral',
+                'key_topics': [],
+                'action_items': [],
+                'urgency_level': 'medium',
+                'response_required': True
+            }
+    
+    def _parse_ai_sequence_response(self, response: str, strategy: Dict[str, Any]) -> Dict[str, Any]:
+        """Parse AI follow-up sequence response"""
+        try:
+            if "```json" in response:
+                json_start = response.find("```json") + 7
+                json_end = response.find("```", json_start)
+                json_str = response[json_start:json_end].strip()
+            else:
+                json_str = response
+            
+            parsed = json.loads(json_str)
+            parsed['success_probability'] = strategy.get('success_probability', 50)
+            
+            return parsed
+        except:
+            return {
+                'follow_ups': [],
+                'total_duration_days': 14,
+                'success_probability': strategy.get('success_probability', 50)
+            }
